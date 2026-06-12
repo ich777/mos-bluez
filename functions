@@ -31,16 +31,30 @@ cleanup_old_debs() {
 refresh_cache() {
   mkdir -p "$PKG_DIR/partial"
   DEBIAN_FRONTEND=noninteractive apt-get.orig $APT_OPTS update >/dev/null 2>&1 || return 1
-  DEBIAN_FRONTEND=noninteractive apt-get.orig $APT_OPTS install -y --download-only \
+  DEBIAN_FRONTEND=noninteractive apt-get.orig $APT_OPTS install -y --download-only --no-install-recommends \
     -o Dir::Cache::archives="$PKG_DIR" $PACKAGES >/dev/null 2>&1 || return 1
   cleanup_old_debs
   return 0
 }
 
+# Make sure the messagebus user/group exists
+ensure_users() {
+  if ! getent group messagebus >/dev/null 2>&1 ; then
+    groupadd --system messagebus 2>/dev/null || addgroup --system messagebus 2>/dev/null
+  fi
+  if ! getent passwd messagebus >/dev/null 2>&1 ; then
+    useradd --system --gid messagebus --home-dir /nonexistent --shell /usr/sbin/nologin messagebus 2>/dev/null || \
+      adduser --system --no-create-home --ingroup messagebus --home /nonexistent --shell /usr/sbin/nologin messagebus 2>/dev/null
+  fi
+}
+
 # Install all cached packages
 install_from_cache() {
   ls "$PKG_DIR"/*.deb >/dev/null 2>&1 || return 1
+  ensure_users
   DEBIAN_FRONTEND=noninteractive dpkg -i "$PKG_DIR"/*.deb >/dev/null 2>&1
+  DEBIAN_FRONTEND=noninteractive dpkg --configure -a >/dev/null 2>&1
+  packages_installed
 }
 
 # Check if dbus and bluez are installed
