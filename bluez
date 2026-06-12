@@ -1,0 +1,107 @@
+#!/bin/bash
+
+# Import MOS functions
+. /usr/local/lib/functions/mos-common
+
+# Set variables
+PLG_NAME="bluez"
+DBUS_RUN_DIR="/run/dbus"
+DBUS_SOCKET="$DBUS_RUN_DIR/system_bus_socket"
+DBUS_PIDFILE="$DBUS_RUN_DIR/pid"
+BT_RUN_DIR="/run/mos-bluez"
+BT_PIDFILE="$BT_RUN_DIR/bluetoothd.pid"
+
+# Check our own pid, never touch container processes
+proc_alive() {
+  local pidfile="$1" comm="$2" pid
+  [ -f "$pidfile" ] || return 1
+  pid="$(cat "$pidfile" 2>/dev/null)"
+  [ -n "$pid" ] || return 1
+  [ -d "/proc/$pid" ] || return 1
+  [ "$(cat "/proc/$pid/comm" 2>/dev/null)" = "$comm" ] || return 1
+  return 0
+}
+
+# Stop our own process
+stop_proc() {
+  local pidfile="$1" comm="$2" pid i
+  if proc_alive "$pidfile" "$comm" ; then
+    pid="$(cat "$pidfile")"
+    kill -TERM "$pid" 2>/dev/null
+    for i in 1 2 3 4 5 ; do
+      proc_alive "$pidfile" "$comm" || break
+      sleep 1
+    done
+    proc_alive "$pidfile" "$comm" && kill -KILL "$pid" 2>/dev/null
+  fi
+  rm -f "$pidfile"
+}
+
+start_dbus() {
+  if proc_alive "$DBUS_PIDFILE" "dbus-daemon" ; then
+    echo "dbus-daemon already running"
+    return 0
+  fi
+  mkdir -p "$DBUS_RUN_DIR"
+  rm -f "$DBUS_SOCKET"
+  # --nofork so $! is the real pid
+  dbus-daemon --system --nofork --nopidfile --address="unix:path=$DBUS_SOCKET" >/dev/null 2>&1 &
+  echo $! > "$DBUS_PIDFILE"
+}
+
+start_bluetooth() {
+  if proc_alive "$BT_PIDFILE" "bluetoothd" ; then
+    echo "bluetoothd already running"
+    return 0
+  fi
+  mkdir -p "$BT_RUN_DIR"
+  # -n so $! is the real pid
+  bluetoothd -nE >/dev/null 2>&1 &
+  echo $! > "$BT_PIDFILE"
+}
+
+case "$1" in
+  status)
+    INSTALLED="false"
+    if dpkg-query -W -f='${Status}' dbus 2>/dev/null | grep -q "install ok installed" && \
+       dpkg-query -W -f='${Status}' bluez 2>/dev/null | grep -q "install ok installed" ; then
+      INSTALLED="true"
+    fi
+
+    DBUS="false"
+    proc_alive "$DBUS_PIDFILE" "dbus-daemon" && DBUS="true"
+
+    BLUETOOTH="false"
+    proc_alive "$BT_PIDFILE" "bluetoothd" && BLUETOOTH="true"
+
+    echo "{\"installed\":$INSTALLED,\"dbus\":$DBUS,\"bluetooth\":$BLUETOOTH}"
+  ;;
+
+  start)
+    start_dbus
+    sleep 1
+    start_bluetooth
+    echo "Started"
+  ;;
+
+  stop)
+    stop_proc "$BT_PIDFILE" "bluetoothd"
+    stop_proc "$DBUS_PIDFILE" "dbus-daemon"
+    echo "Stopped"
+  ;;
+
+  restart)
+    stop_proc "$BT_PIDFILE" "bluetoothd"
+    stop_proc "$DBUS_PIDFILE" "dbus-daemon"
+    sleep 1
+    start_dbus
+    sleep 1
+    start_bluetooth
+    echo "Restarted"
+  ;;
+
+  *)
+    echo "Usage: $0 {status|start|stop|restart}"
+    exit 1
+  ;;
+esac

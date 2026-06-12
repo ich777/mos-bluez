@@ -1,0 +1,15 @@
+{
+  "plugin_bluez": {
+    "title": "BlueZ",
+    "description": "Installs and manages dbus and bluez (Bluetooth)",
+    "status": "Status",
+    "services": "Services",
+    "packages": "Packages",
+    "installed": "Installed",
+    "not_installed": "Not installed",
+    "running": "Running",
+    "not_running": "Not Running",
+    "start": "Start",
+    "stop": "Stop"
+  }
+}
