@@ -15,8 +15,8 @@ MOS to start and stop both services and monitor their status.
 
 ### Package Source
 
-- dbus: [https://www.freedesktop.org/wiki/Software/dbus/](https://www.freedesktop.org/wiki/Software/dbus/)
-- BlueZ: [http://www.bluez.org/](http://www.bluez.org/)
+- dbus: [https://www.freedesktop.org/wiki/Software/dbus](https://www.freedesktop.org/wiki/Software/dbus)
+- BlueZ: [https://github.com/bluez](https://github.com/bluez)
 
 ---
 
