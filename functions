@@ -67,7 +67,13 @@ install() {
   echo "Installing dbus and bluez..."
   mkdir -p "$PKG_DIR"
 
-  if ! refresh_cache ; then
+  if packages_installed ; then
+    echo "dbus and bluez already installed"
+    "$COMMAND" start
+    return 0
+  fi
+
+  if ! ls "$PKG_DIR"/*.deb >/dev/null 2>&1 && ! refresh_cache ; then
     echo "Failed to download packages"
     exit 1
   fi
@@ -84,19 +90,13 @@ install() {
 mos_start() {
   mkdir -p "$PKG_DIR"
 
-  if ls "$PKG_DIR"/*.deb >/dev/null 2>&1 ; then
-    # Install from cache, refresh in background for next boot
+  if ! packages_installed ; then
+    ls "$PKG_DIR"/*.deb >/dev/null 2>&1 || refresh_cache
     install_from_cache
-    ( refresh_cache && install_from_cache ) >/dev/null 2>&1 &
-  else
-    # No cache yet, fetch now
-    if refresh_cache ; then
-      install_from_cache
-    else
-      echo "No cached packages and no network, skipping start"
-      return 0
-    fi
   fi
+
+  # Refresh the cache in the background for the next boot
+  ( refresh_cache ) >/dev/null 2>&1 &
 
   if packages_installed ; then
     "$COMMAND" start
