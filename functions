@@ -53,7 +53,7 @@ install_from_cache() {
   ls "$PKG_DIR"/*.deb >/dev/null 2>&1 || return 1
   ensure_users
   DEBIAN_FRONTEND=noninteractive dpkg -i "$PKG_DIR"/*.deb >/dev/null 2>&1
-  DEBIAN_FRONTEND=noninteractive dpkg --configure -a >/dev/null 2>&1
+  DEBIAN_FRONTEND=noninteractive dpkg -i "$PKG_DIR"/*.deb >/dev/null 2>&1
   packages_installed
 }
 
