@@ -3,40 +3,6 @@
 # Import MOS functions
 . /usr/local/lib/functions/mos-common
 
-# Set variables for plugin
-PLG_NAME="bluez"
-DISPLAY_NAME="BlueZ"
-PLG_DIR="/boot/optional/plugins/$PLG_NAME"
-PKG_DIR="$PLG_DIR/packages"
-PACKAGES="dbus bluez"
-COMMAND="/usr/bin/plugins/bluez"
-
-# apt options to fail fast without network
-APT_OPTS="-o Acquire::Retries=1 -o Acquire::http::Timeout=10 -o Acquire::https::Timeout=10 -o Acquire::ftp::Timeout=10"
-
-# Keep only the newest .deb per package
-cleanup_old_debs() {
-  local deb base
-  for deb in "$PKG_DIR"/*.deb ; do
-    [ -e "$deb" ] || continue
-    base="${deb##*/}"
-    base="${base%%_*}"
-    ls -1 "$PKG_DIR/${base}_"*.deb 2>/dev/null | sort -V | head -n -1 | while read -r old ; do
-      rm -f "$old"
-    done
-  done
-}
-
-# Update lists and download packages into the boot cache
-refresh_cache() {
-  mkdir -p "$PKG_DIR/partial"
-  DEBIAN_FRONTEND=noninteractive apt-get.orig $APT_OPTS update >/dev/null 2>&1 || return 1
-  DEBIAN_FRONTEND=noninteractive apt-get.orig $APT_OPTS install -y --download-only --no-install-recommends \
-    -o Dir::Cache::archives="$PKG_DIR" $PACKAGES >/dev/null 2>&1 || return 1
-  cleanup_old_debs
-  return 0
-}
-
 # Make sure the messagebus user/group exists
 ensure_users() {
   if ! getent group messagebus >/dev/null 2>&1 ; then
@@ -48,59 +14,20 @@ ensure_users() {
   fi
 }
 
-# Install all cached packages
-install_from_cache() {
-  ls "$PKG_DIR"/*.deb >/dev/null 2>&1 || return 1
+pre_install() {
+  # Ensure users
   ensure_users
-  DEBIAN_FRONTEND=noninteractive dpkg -i "$PKG_DIR"/*.deb >/dev/null 2>&1
-  DEBIAN_FRONTEND=noninteractive dpkg -i "$PKG_DIR"/*.deb >/dev/null 2>&1
-  packages_installed
-}
-
-# Check if dbus and bluez are installed
-packages_installed() {
-  dpkg-query -W -f='${Status}' dbus 2>/dev/null | grep -q "install ok installed" && \
-    dpkg-query -W -f='${Status}' bluez 2>/dev/null | grep -q "install ok installed"
 }
 
 install() {
-  echo "Installing dbus and bluez..."
-  mkdir -p "$PKG_DIR"
-
-  if packages_installed ; then
-    echo "dbus and bluez already installed"
-    "$COMMAND" start
-    return 0
-  fi
-
-  if ! ls "$PKG_DIR"/*.deb >/dev/null 2>&1 && ! refresh_cache ; then
-    echo "Failed to download packages"
-    exit 1
-  fi
-
-  if ! install_from_cache ; then
-    echo "Failed to install packages"
-    exit 1
-  fi
-
-  echo "dbus and bluez installed"
-  "$COMMAND" start
+  # Start dbus and bluez
+  /usr/bin/plugins/bluez start
 }
 
 mos_start() {
-  mkdir -p "$PKG_DIR"
+  # Ensure users
+  ensure_users
 
-  if ! packages_installed ; then
-    ls "$PKG_DIR"/*.deb >/dev/null 2>&1 || refresh_cache
-    install_from_cache
-  fi
-
-  # Refresh the cache in the background for the next boot
-  ( refresh_cache ) >/dev/null 2>&1 &
-
-  if packages_installed ; then
-    "$COMMAND" start
-  else
-    echo "dbus/bluez not installed, skipping start"
-  fi
+  # Start dbus and bluez
+  /usr/bin/plugins/bluez start
 }
