@@ -14,22 +14,10 @@
         <v-card-text>
           <v-row align="center">
             <v-col cols="12" md="3">
-              <span class="text-subtitle-1 font-weight-medium">
-                {{ $t('plugin_bluez.packages') }}
-              </span>
-              <v-chip
-                size="small" class="ml-2"
-                :color="installed ? 'green' : 'grey'" variant="flat"
-              >
-                {{ installed ? $t('plugin_bluez.installed') : $t('plugin_bluez.not_installed') }}
-              </v-chip>
-            </v-col>
-            <v-col cols="12" md="3">
               <span class="text-subtitle-1 font-weight-medium">D-Bus</span>
               <v-chip
                 size="small" class="ml-2"
-                :color="dbusRunning ? 'green' : 'grey'" variant="flat"
-              >
+                :color="dbusRunning ? 'green' : 'grey'" variant="flat">
                 {{ dbusRunning ? $t('plugin_bluez.running') : $t('plugin_bluez.not_running') }}
               </v-chip>
             </v-col>
@@ -37,8 +25,7 @@
               <span class="text-subtitle-1 font-weight-medium">Bluetooth</span>
               <v-chip
                 size="small" class="ml-2"
-                :color="bluetoothRunning ? 'green' : 'grey'" variant="flat"
-              >
+                :color="bluetoothRunning ? 'green' : 'grey'" variant="flat">
                 {{ bluetoothRunning ? $t('plugin_bluez.running') : $t('plugin_bluez.not_running') }}
               </v-chip>
             </v-col>
@@ -83,7 +70,6 @@ const starting = ref(false);
 const stopping = ref(false);
 const statusInterval = ref(null);
 
-const installed = ref(false);
 const dbusRunning = ref(false);
 const bluetoothRunning = ref(false);
 
@@ -113,7 +99,6 @@ const checkStatus = async () => {
     if (res.ok) {
       const data = await res.json();
       if (data.success && data.output) {
-        installed.value = data.output.installed === true;
         dbusRunning.value = data.output.dbus === true;
         bluetoothRunning.value = data.output.bluetooth === true;
       }
