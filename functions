@@ -34,5 +34,5 @@ mos_start() {
 
 uninstall() {
   /usr/bin/plugins/bluez stop >/dev/null 2>&1
-  DEBIAN_FRONTEND=noninteractive apt-get.orig purge dbus bluez >/dev/null 2>&1
+  DEBIAN_FRONTEND=noninteractive apt-get.orig -y purge dbus bluez >/dev/null 2>&1
 }
