@@ -62,19 +62,13 @@ start_bluetooth() {
 
 case "$1" in
   status)
-    INSTALLED="false"
-    if dpkg-query -W -f='${Status}' dbus 2>/dev/null | grep -q "install ok installed" && \
-       dpkg-query -W -f='${Status}' bluez 2>/dev/null | grep -q "install ok installed" ; then
-      INSTALLED="true"
-    fi
-
     DBUS="false"
     proc_alive "$DBUS_PIDFILE" "dbus-daemon" && DBUS="true"
 
     BLUETOOTH="false"
     proc_alive "$BT_PIDFILE" "bluetoothd" && BLUETOOTH="true"
 
-    echo "{\"installed\":$INSTALLED,\"dbus\":$DBUS,\"bluetooth\":$BLUETOOTH}"
+    echo "{\"dbus\":$DBUS,\"bluetooth\":$BLUETOOTH}"
   ;;
 
   start)
