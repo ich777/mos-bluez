@@ -6,11 +6,11 @@
 # Make sure the messagebus user/group exists
 ensure_users() {
   if ! getent group messagebus >/dev/null 2>&1 ; then
-    groupadd --system messagebus 2>/dev/null || addgroup --system messagebus 2>/dev/null
+    groupadd --system messagebus >/dev/null 2>&1 || addgroup --system messagebus >/dev/null 2>&1
   fi
   if ! getent passwd messagebus >/dev/null 2>&1 ; then
-    useradd --system --gid messagebus --home-dir /nonexistent --shell /usr/sbin/nologin messagebus 2>/dev/null || \
-      adduser --system --no-create-home --ingroup messagebus --home /nonexistent --shell /usr/sbin/nologin messagebus 2>/dev/null
+    useradd --system --gid messagebus --home-dir /nonexistent --shell /usr/sbin/nologin messagebus >/dev/null 2>&1 || \
+      adduser --system --no-create-home --ingroup messagebus --home /nonexistent --shell /usr/sbin/nologin messagebus >/dev/null 2>&1
   fi
 }
 
@@ -21,7 +21,7 @@ pre_install() {
 
 install() {
   # Start dbus and bluez
-  /usr/bin/plugins/bluez start
+  /usr/bin/plugins/bluez start >/dev/null 2>&1
 }
 
 mos_start() {
@@ -29,5 +29,5 @@ mos_start() {
   ensure_users
 
   # Start dbus and bluez
-  /usr/bin/plugins/bluez start
+  /usr/bin/plugins/bluez start >/dev/null 2>&1
 }
