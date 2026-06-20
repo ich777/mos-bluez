@@ -31,3 +31,8 @@ mos_start() {
   # Start dbus and bluez
   /usr/bin/plugins/bluez start >/dev/null 2>&1
 }
+
+uninstall() {
+  /usr/bin/plugins/bluez stop >/dev/null 2>&1
+  DEBIAN_FRONTEND=noninteractive dpkg --purge dbus bluez >/dev/null 2>&1
+}
